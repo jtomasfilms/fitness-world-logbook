@@ -15,11 +15,13 @@ import { SetRow } from "@/components/SetRow";
 import { RestTimerInline } from "@/components/RestTimerInline";
 import { WorkoutOptionsMenu } from "@/components/WorkoutOptionsMenu";
 import { ExerciseOptionsMenu } from "@/components/ExerciseOptionsMenu";
-import { computePRCount, workoutDurationMinutes, workoutVolume } from "@/lib/workout-logic";
+import { computePRCount, workoutVolume } from "@/lib/workout-logic";
 import { format } from "date-fns";
+import { primeAudio, playBeep } from "@/lib/sound";
 
 type ActiveRest = {
   blockId: string;
+  afterSetId: string;
   endAtMs: number;
 };
 
@@ -49,14 +51,21 @@ export default function WorkoutPage() {
   const [addExerciseOpen, setAddExerciseOpen] = React.useState(false);
   const [exerciseSearch, setExerciseSearch] = React.useState("");
 
-  const [blockNoteOpen, setBlockNoteOpen] = React.useState<{ open: boolean; blockId: string | null; mode: "note" | "sticky" }>({
+  const [blockNoteOpen, setBlockNoteOpen] = React.useState<{
+    open: boolean;
+    blockId: string | null;
+    mode: "note" | "sticky";
+  }>({
     open: false,
     blockId: null,
     mode: "note",
   });
   const [blockNoteDraft, setBlockNoteDraft] = React.useState("");
 
-  const [restEditOpen, setRestEditOpen] = React.useState<{ open: boolean; blockId: string | null }>({ open: false, blockId: null });
+  const [restEditOpen, setRestEditOpen] = React.useState<{ open: boolean; blockId: string | null }>({
+    open: false,
+    blockId: null,
+  });
   const [restDraft, setRestDraft] = React.useState("");
 
   React.useEffect(() => {
@@ -104,9 +113,10 @@ export default function WorkoutPage() {
     return `${wt} lb × ${rp}`;
   };
 
-  const startRest = (blockId: string, seconds: number) => {
+  const startRest = (blockId: string, afterSetId: string, seconds: number) => {
     setActiveRest({
       blockId,
+      afterSetId,
       endAtMs: Date.now() + seconds * 1000,
     });
   };
@@ -178,6 +188,28 @@ export default function WorkoutPage() {
           {format(new Date(workout.startedAt), "EEEE, MMM d")} • {formatSeconds(elapsedSec)}
         </div>
 
+        {/* Make notes/photos obvious */}
+        <div className="mt-3 flex gap-2">
+          <Button
+            variant="outline"
+            className="w-full rounded-2xl"
+            onClick={() => {
+              setNoteValue(workout.note ?? "");
+              setNoteOpen(true);
+            }}
+          >
+            Add Note
+          </Button>
+
+          <Button
+            variant="outline"
+            className="w-full rounded-2xl"
+            onClick={() => setPhotoOpen(true)}
+          >
+            Add Photo
+          </Button>
+        </div>
+
         {workout.photoDataUrl && (
           <img
             src={workout.photoDataUrl}
@@ -234,9 +266,6 @@ export default function WorkoutPage() {
                 onReplace={() => {
                   setAddExerciseOpen(true);
                   setExerciseSearch("");
-                  // we’ll replace by selecting an exercise, but only if one block is “selected”
-                  // quick trick: store target blockId in restEditOpen
-                  setRestEditOpen({ open: true, blockId: b.id });
                 }}
                 onRemove={() => {
                   setWorkout((prev) => {
@@ -274,7 +303,8 @@ export default function WorkoutPage() {
               <div className="text-center">✓</div>
             </div>
 
-            <div className="mt-1">
+            <div className="mt-1 space-y-2">
+             d
               {b.sets.map((s, idx) => (
                 <div key={s.id} className="space-y-2">
                   <SetRow
@@ -302,23 +332,29 @@ export default function WorkoutPage() {
                         return { ...blk, sets: next };
                       });
 
-                      // start rest timer only if marking COMPLETE
+                      // only start timer when marking COMPLETE
                       if (!s.completed) {
-                        startRest(b.id, b.restSeconds);
+                        primeAudio(); // unlock sound on iPhone tap
+                        startRest(b.id, s.id, b.restSeconds);
                       }
                     }}
                   />
 
-                  {/* Rest timer appears after the set you just completed */}
-                  {activeRest?.blockId === b.id && (
+                  {/* ONLY show timer directly under the set that triggered it */}
+                  {activeRest?.blockId === b.id && activeRest.afterSetId === s.id && (
                     <RestTimerInline
                       endAtMs={activeRest.endAtMs}
                       defaultSeconds={b.restSeconds}
                       onChangeSeconds={(seconds) => {
                         updateBlock(b.id, (blk) => ({ ...blk, restSeconds: seconds }));
-                        startRest(b.id, seconds);
+                        startRest(b.id, s.id, seconds);
                       }}
                       onStop={() => setActiveRest(null)}
+                      onComplete={() => {
+                        playBeep();
+                        if (navigator.vibrate) navigator.vibrate(200);
+                        setTimeout(() => setActiveRest(null), 1200);
+                      }}
                     />
                   )}
                 </div>
@@ -473,7 +509,10 @@ export default function WorkoutPage() {
       </Dialog>
 
       {/* block note dialog */}
-      <Dialog open={blockNoteOpen.open} onOpenChange={(v) => setBlockNoteOpen((p) => ({ ...p, open: v }))}>
+      <Dialog
+        open={blockNoteOpen.open}
+        onOpenChange={(v) => setBlockNoteOpen((p) => ({ ...p, open: v }))}
+      >
         <DialogContent className="rounded-3xl">
           <DialogHeader>
             <DialogTitle>{blockNoteOpen.mode === "sticky" ? "Sticky Note" : "Exercise Note"}</DialogTitle>

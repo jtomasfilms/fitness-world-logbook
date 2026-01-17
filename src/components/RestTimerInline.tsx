@@ -9,12 +9,15 @@ export function RestTimerInline(props: {
   defaultSeconds: number;
   onChangeSeconds: (seconds: number) => void;
   onStop: () => void;
+  onComplete?: () => void;
 }) {
-  const { endAtMs, defaultSeconds, onChangeSeconds, onStop } = props;
+  const { endAtMs, defaultSeconds, onChangeSeconds, onStop, onComplete } = props;
 
   const [now, setNow] = React.useState(() => Date.now());
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState("");
+
+  const firedRef = React.useRef(false);
 
   React.useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 250);
@@ -24,15 +27,17 @@ export function RestTimerInline(props: {
   const remaining = Math.max(0, Math.ceil((endAtMs - now) / 1000));
 
   React.useEffect(() => {
-    if (remaining <= 0) {
-      // timer complete
+    if (remaining <= 0 && !firedRef.current) {
+      firedRef.current = true;
+      onComplete?.();
     }
-  }, [remaining]);
+  }, [remaining, onComplete]);
 
   if (editing) {
     return (
       <div className="flex items-center justify-between rounded-xl border bg-blue-50 px-3 py-2">
         <div className="text-sm font-semibold text-blue-700">Rest</div>
+
         <div className="flex items-center gap-2">
           <input
             value={draft}
@@ -52,6 +57,7 @@ export function RestTimerInline(props: {
               onChangeSeconds(parsed);
               setEditing(false);
               setDraft("");
+              firedRef.current = false;
             }}
           >
             Save
@@ -76,6 +82,7 @@ export function RestTimerInline(props: {
         >
           {formatSeconds(remaining)}
         </button>
+
         <Button size="sm" variant="ghost" onClick={onStop}>
           Stop
         </Button>
