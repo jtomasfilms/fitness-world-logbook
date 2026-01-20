@@ -12,6 +12,7 @@ import { WorkoutsPerWeekChart } from "@/components/widgets/WorkoutsPerWeekChart"
 import { MeasurementsChart } from "@/components/widgets/MeasurementsChart";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { getSettings, saveSettings, DEFAULT_SETTINGS } from "@/lib/settings";
 
 export default function ProfilePage() {
   const [workouts, setWorkouts] = React.useState<WorkoutSession[]>([]);
@@ -21,6 +22,14 @@ export default function ProfilePage() {
   const [measurements, setMeasurements] = React.useState<MeasurementEntry[]>([]);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [vibrationEnabled, setVibrationEnabled] = React.useState(true);
+  const [mounted, setMounted] = React.useState(false);
+  const [settings, setSettings] = React.useState(DEFAULT_SETTINGS);
+
+React.useEffect(() => {
+  setMounted(true);
+  setSettings(getSettings());
+}, []);
+
 
   React.useEffect(() => {
     setWorkouts(listWorkouts().filter((w) => !!w.endedAt));
@@ -153,6 +162,44 @@ setVibrationEnabled(p.vibrationEnabled ?? true);
       />
     </div>
   </div>
+</Card>
+<Card className="rounded-3xl p-4">
+  <div className="mb-3">
+    <div className="text-sm font-semibold text-zinc-800">Timer Alerts</div>
+    <div className="text-xs text-zinc-500">
+      Sound + vibration when your rest timer ends
+    </div>
+  </div>
+
+  {!mounted ? (
+    <div className="text-xs text-zinc-500">Loading settings…</div>
+  ) : (
+    <div className="space-y-4">
+      {/* Sound */}
+      <div className="flex items-center justify-between">
+        <Label className="text-sm text-zinc-700">Sound</Label>
+        <Switch
+          checked={settings.soundEnabled}
+          onCheckedChange={(v) => {
+            const next = saveSettings({ soundEnabled: v });
+            setSettings(next);
+          }}
+        />
+      </div>
+
+      {/* Vibration */}
+      <div className="flex items-center justify-between">
+        <Label className="text-sm text-zinc-700">Vibration</Label>
+        <Switch
+          checked={settings.vibrationEnabled}
+          onCheckedChange={(v) => {
+            const next = saveSettings({ vibrationEnabled: v });
+            setSettings(next);
+          }}
+        />
+      </div>
+    </div>
+  )}
 </Card>
 
       <Card className="rounded-3xl p-4">
