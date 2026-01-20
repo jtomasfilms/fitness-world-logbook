@@ -51,8 +51,8 @@ export default function StartPage() {
         </div>
       </div>
 
-      {unfinished && (
-        <Card className="rounded-3xl p-4">
+      {mounted && unfinished && (
+  <Card className="rounded-3xl p-4">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-zinc-500">Active workout</div>
