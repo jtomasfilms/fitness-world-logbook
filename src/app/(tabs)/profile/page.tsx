@@ -7,15 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-import {
-  listWorkouts,
-  getProfile,
-  saveProfile,
-  resetAllData,
-} from "@/lib/storage";
-
-import { getSettings, saveSettings } from "@/lib/settings";
-
+import { listWorkouts, getProfile, saveProfile, resetAllData } from "@/lib/storage";
 import { MeasurementEntry, WorkoutSession } from "@/lib/types";
 import { uid } from "@/lib/utils";
 
@@ -23,30 +15,29 @@ import { WidgetShell } from "@/components/widgets/WidgetShell";
 import { WorkoutsPerWeekChart } from "@/components/widgets/WorkoutsPerWeekChart";
 import { MeasurementsChart } from "@/components/widgets/MeasurementsChart";
 
+import { getSettings, saveSettings } from "@/lib/settings";
+
 export default function ProfilePage() {
   const [workouts, setWorkouts] = React.useState<WorkoutSession[]>([]);
   const [username, setUsername] = React.useState("User");
-
-  const [metric, setMetric] = React.useState<"Neck" | "Waist" | "Weight">(
-    "Neck"
-  );
+  const [metric, setMetric] = React.useState<"Neck" | "Waist" | "Weight">("Neck");
   const [value, setValue] = React.useState("");
   const [measurements, setMeasurements] = React.useState<MeasurementEntry[]>([]);
 
-  // ✅ Settings toggles
+  // ✅ Timer alerts settings
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [vibrationEnabled, setVibrationEnabled] = React.useState(true);
 
   React.useEffect(() => {
-    // workouts
+    // ✅ completed workouts only
     setWorkouts(listWorkouts().filter((w) => !!w.endedAt));
 
-    // profile
+    // ✅ profile data
     const p = getProfile();
     setUsername(p.username ?? "User");
     setMeasurements(p.measurements ?? []);
 
-    // settings
+    // ✅ timer alert settings
     const s = getSettings();
     setSoundEnabled(s.soundEnabled ?? true);
     setVibrationEnabled(s.vibrationEnabled ?? true);
@@ -61,7 +52,7 @@ export default function ProfilePage() {
         <p className="text-sm text-zinc-500">Dashboard + widgets</p>
       </div>
 
-      {/* Username card */}
+      {/* Username */}
       <Card className="rounded-3xl p-4">
         <div className="flex items-center justify-between">
           <div>
@@ -76,6 +67,7 @@ export default function ProfilePage() {
             onClick={() => {
               const next = prompt("Update username", username);
               if (!next) return;
+
               setUsername(next);
 
               const p = getProfile();
@@ -87,7 +79,7 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      {/* Workouts per week */}
+      {/* Workouts chart */}
       <WidgetShell title="Workouts per week">
         <WorkoutsPerWeekChart workouts={workouts} />
       </WidgetShell>
@@ -113,6 +105,7 @@ export default function ProfilePage() {
       {/* Add measurement */}
       <Card className="rounded-3xl p-4">
         <div className="text-sm font-semibold text-zinc-800">Add measurement</div>
+
         <div className="mt-2 flex gap-2">
           <Input
             value={value}
@@ -121,6 +114,7 @@ export default function ProfilePage() {
             className="rounded-2xl"
             inputMode="decimal"
           />
+
           <Button
             onClick={() => {
               const num = Number(value);
@@ -146,7 +140,7 @@ export default function ProfilePage() {
         </div>
       </Card>
 
-      {/* ✅ Timer Alerts toggles */}
+      {/* ✅ Timer Alerts */}
       <Card className="rounded-3xl p-4">
         <div className="mb-3">
           <div className="text-sm font-semibold text-zinc-800">Timer Alerts</div>
