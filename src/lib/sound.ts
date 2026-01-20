@@ -15,22 +15,16 @@ export async function primeAudio() {
 
 export function playBeep() {
   try {
-    if (!ctx) return;
+    // whatever audio code you already have (keep it)
+    const audio = new Audio("/beep.mp3"); // example: KEEP YOUR EXISTING PATH
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
 
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-
-    o.type = "sine";
-    o.frequency.value = 880;
-    g.gain.value = 0.06;
-
-    o.connect(g);
-    g.connect(ctx.destination);
-
-    const now = ctx.currentTime;
-    o.start(now);
-    o.stop(now + 0.2);
-  } catch {
+    // ✅ add vibration
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
+  } catch (e) {
     // ignore
   }
 }
