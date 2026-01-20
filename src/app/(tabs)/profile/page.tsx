@@ -10,6 +10,8 @@ import { uid } from "@/lib/utils";
 import { WidgetShell } from "@/components/widgets/WidgetShell";
 import { WorkoutsPerWeekChart } from "@/components/widgets/WorkoutsPerWeekChart";
 import { MeasurementsChart } from "@/components/widgets/MeasurementsChart";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function ProfilePage() {
   const [workouts, setWorkouts] = React.useState<WorkoutSession[]>([]);
@@ -17,12 +19,17 @@ export default function ProfilePage() {
   const [metric, setMetric] = React.useState<"Neck" | "Waist" | "Weight">("Neck");
   const [value, setValue] = React.useState("");
   const [measurements, setMeasurements] = React.useState<MeasurementEntry[]>([]);
+  const [soundEnabled, setSoundEnabled] = React.useState(true);
+  const [vibrationEnabled, setVibrationEnabled] = React.useState(true);
 
   React.useEffect(() => {
     setWorkouts(listWorkouts().filter((w) => !!w.endedAt));
     const p = getProfile();
     setUsername(p.username);
     setMeasurements(p.measurements ?? []);
+    
+    setSoundEnabled(p.soundEnabled ?? true);
+setVibrationEnabled(p.vibrationEnabled ?? true);
   }, []);
 
   const totalWorkouts = workouts.length;
@@ -113,6 +120,40 @@ export default function ProfilePage() {
           </Button>
         </div>
       </Card>
+      <Card className="rounded-3xl p-4">
+  <div className="mb-3">
+    <div className="text-sm font-semibold text-zinc-800">Timer Alerts</div>
+    <div className="text-xs text-zinc-500">Sound + vibration when your rest timer ends</div>
+  </div>
+
+  <div className="space-y-4">
+    {/* Sound */}
+    <div className="flex items-center justify-between">
+      <Label className="text-sm text-zinc-700">Sound</Label>
+      <Switch
+        checked={soundEnabled}
+        onCheckedChange={(v: boolean) => {
+          setSoundEnabled(v);
+          const p = getProfile();
+          saveProfile({ ...p, soundEnabled: v });
+        }}
+      />
+    </div>
+
+    {/* Vibration */}
+    <div className="flex items-center justify-between">
+      <Label className="text-sm text-zinc-700">Vibration</Label>
+      <Switch
+        checked={vibrationEnabled}
+        onCheckedChange={(v: boolean) => {
+          setVibrationEnabled(v);
+          const p = getProfile();
+          saveProfile({ ...p, vibrationEnabled: v });
+        }}
+      />
+    </div>
+  </div>
+</Card>
 
       <Card className="rounded-3xl p-4">
         <Button

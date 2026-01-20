@@ -12,19 +12,34 @@ export async function primeAudio() {
     // ignore
   }
 }
+// src/lib/sound.ts
+import { getSettings } from "./settings";
 
 export function playBeep() {
-  try {
-    // whatever audio code you already have (keep it)
-    const audio = new Audio("/beep.mp3"); // example: KEEP YOUR EXISTING PATH
-    audio.currentTime = 0;
-    audio.play().catch(() => {});
+  const settings = getSettings();
 
-    // ✅ add vibration
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+  try {
+    // ✅ Sound toggle
+    if (settings.soundEnabled) {
+      const audio = new Audio("/beep.mp3"); // keep your existing path
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
+
+    // ✅ Vibration toggle
+    if (
+      settings.vibrationEnabled &&
+      typeof navigator !== "undefined" &&
+      "vibrate" in navigator
+    ) {
       navigator.vibrate([200, 100, 200]);
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
+}
+export function vibrateTimer(pattern: number | number[] = [120, 60, 120]) {
+  if (typeof window === "undefined") return;
+  if (!("vibrate" in navigator)) return;
+  navigator.vibrate(pattern);
 }

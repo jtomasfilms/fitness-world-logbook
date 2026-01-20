@@ -75,9 +75,26 @@ export function deleteWorkout(id: string) {
   saveWorkouts(all);
 }
 
-export function getProfile() {
-  return getJSON<UserProfile>(KEYS.profile, DEFAULT_PROFILE);
+export function getProfile(): UserProfile {
+  const raw = localStorage.getItem("profile");
+  if (raw) {
+    const p = JSON.parse(raw) as Partial<UserProfile>;
+    return {
+      username: p.username ?? "User",
+      measurements: p.measurements ?? [],
+      soundEnabled: p.soundEnabled ?? true,
+      vibrationEnabled: p.vibrationEnabled ?? true,
+    };
+  }
+
+  return {
+    username: "User",
+    measurements: [],
+    soundEnabled: true,
+    vibrationEnabled: true,
+  };
 }
+
 
 export function saveProfile(profile: UserProfile) {
   setJSON(KEYS.profile, profile);

@@ -66,4 +66,7 @@ export const DEFAULT_PROGRAMS: ProgramFolder[] = [
 export const DEFAULT_PROFILE: UserProfile = {
   username: "jtomas229",
   measurements: [],
+  soundEnabled: true,
+  vibrationEnabled: true,
 };
+

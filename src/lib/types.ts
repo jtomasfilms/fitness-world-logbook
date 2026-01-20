@@ -86,6 +86,8 @@ export type WorkoutSession = {
 export type UserProfile = {
   username: string;
   measurements: MeasurementEntry[];
+  soundEnabled?: boolean;
+  vibrationEnabled?: boolean;
 };
 
 export type MeasurementEntry = {

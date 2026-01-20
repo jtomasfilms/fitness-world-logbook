@@ -17,7 +17,8 @@ import { WorkoutOptionsMenu } from "@/components/WorkoutOptionsMenu";
 import { ExerciseOptionsMenu } from "@/components/ExerciseOptionsMenu";
 import { computePRCount, workoutVolume } from "@/lib/workout-logic";
 import { format } from "date-fns";
-import { primeAudio, playBeep } from "@/lib/sound";
+import { primeAudio, playBeep, vibrateTimer } from "@/lib/sound";
+import { getProfile } from "@/lib/storage";
 
 type ActiveRest = {
   blockId: string;
@@ -351,10 +352,22 @@ export default function WorkoutPage() {
                       }}
                       onStop={() => setActiveRest(null)}
                       onComplete={() => {
-                        playBeep();
-                        if (navigator.vibrate) navigator.vibrate(200);
-                        setTimeout(() => setActiveRest(null), 1200);
-                      }}
+  const p = getProfile();
+if (p.soundEnabled ?? true) playBeep();
+if (p.vibrationEnabled ?? true) vibrateTimer();
+
+
+  if (p.soundEnabled ?? true) {
+    playBeep();
+  }
+
+  if (p.vibrationEnabled ?? true) {
+    if ("vibrate" in navigator) navigator.vibrate([200, 80, 200]);
+  }
+
+  setTimeout(() => setActiveRest(null), 1200);
+}}
+
                     />
                   )}
                 </div>
