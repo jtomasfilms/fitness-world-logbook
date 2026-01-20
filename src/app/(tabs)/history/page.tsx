@@ -7,12 +7,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { listWorkouts } from "@/lib/storage";
 import { WorkoutSession } from "@/lib/types";
 import { dayName, monthKey, niceDate, workoutDurationMinutes, workoutVolume, findWorkoutOnDate } from "@/lib/workout-logic";
+import { useRouter } from "next/navigation";
 
 export default function HistoryPage() {
   const [workouts, setWorkouts] = React.useState<WorkoutSession[]>([]);
   const [calendarOpen, setCalendarOpen] = React.useState(false);
   const [datePick, setDatePick] = React.useState("");
   const [found, setFound] = React.useState<WorkoutSession | null>(null);
+  const router = useRouter();
+  
 
   React.useEffect(() => {
     const all = listWorkouts().filter((w) => !!w.endedAt);
@@ -47,43 +50,29 @@ export default function HistoryPage() {
           <div className="text-sm font-semibold text-zinc-800">{k}</div>
 
           {arr.map((w) => (
-            <Card key={w.id} className="rounded-3xl p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-lg font-bold">{dayName(w.endedAt!)}</div>
-                  <div className="text-sm text-zinc-500">{niceDate(w.endedAt!)}</div>
-                </div>
+  <button
+    key={w.id}
+    type="button"
+    className="w-full text-left"
+    onClick={() => router.push(`/history/${w.id}`)}
+  >
+    <Card className="rounded-3xl p-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-lg font-bold">{dayName(w.endedAt ?? new Date().toISOString())}</div>
+          <div className="text-sm text-zinc-500">{niceDate(w.endedAt ?? new Date().toISOString())}</div>
+        </div>
 
-                <div className="text-right text-sm text-zinc-600">
-                  <div>{workoutDurationMinutes(w)}m</div>
-                  <div className="font-semibold">{workoutVolume(w)} lb</div>
-                  <div className="text-xs text-zinc-500">{w.prCount ?? 0} PRs</div>
-                </div>
-              </div>
+        <div className="text-right text-sm text-zinc-600">
+          <div>{workoutDurationMinutes(w)}m</div>
+          <div className="font-semibold">{workoutVolume(w)} lb</div>
+          <div className="text-xs text-zinc-500">{w.prCount ?? 0} PRs</div>
+        </div>
+      </div>
+    </Card>
+  </button>
+))}
 
-              <div className="mt-3 space-y-2">
-                {w.exercises.map((ex) => {
-                  const best = ex.sets
-                    .filter((s) => s.completed && s.type === "work" && s.weight != null && s.reps != null)
-                    .reduce(
-                      (acc, s) => {
-                        const score = (s.weight ?? 0) * (s.reps ?? 0);
-                        if (score > acc.score) return { score, label: `${s.weight} lb × ${s.reps}` };
-                        return acc;
-                      },
-                      { score: 0, label: "—" }
-                    );
-
-                  return (
-                    <div key={ex.id} className="flex items-center justify-between text-sm">
-                      <div className="text-zinc-700">{ex.name}</div>
-                      <div className="text-zinc-500">{best.label}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          ))}
         </div>
       ))}
 

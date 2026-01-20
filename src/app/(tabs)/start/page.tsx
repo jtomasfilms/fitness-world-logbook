@@ -9,10 +9,10 @@ import {
   createWorkoutFromTemplate,
   listWorkouts,
 } from "@/lib/storage";
-import { ProgramFolder, WorkoutTemplate, WorkoutSession } from "@/lib/types";
+import { ProgramFolder, WorkoutTemplate } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { TemplatePreviewSheet } from "@/components/TemplatePreviewSheet";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistance } from "date-fns";
 
 export default function StartPage() {
   const router = useRouter();
@@ -21,26 +21,23 @@ export default function StartPage() {
   const [selected, setSelected] = React.useState<WorkoutTemplate | null>(null);
   const [open, setOpen] = React.useState(false);
 
-  // ✅ Prevent hydration mismatch
-  const [mounted, setMounted] = React.useState(false);
-
-  // ✅ Store unfinished workout in state instead of rendering it from localStorage immediately
-  const [unfinished, setUnfinished] = React.useState<WorkoutSession | null>(null);
+  // ✅ hydrate-safe state
+  const [unfinished, setUnfinished] = React.useState<any>(null);
+  const [now, setNow] = React.useState<number | null>(null);
 
   React.useEffect(() => {
-    setMounted(true);
     setPrograms(listPrograms());
-
-    // ✅ localStorage read AFTER mount
-    const u = listWorkouts().find((w) => !w.endedAt) ?? null;
-    setUnfinished(u);
+    setUnfinished(listWorkouts().find((w) => !w.endedAt) ?? null);
+    setNow(Date.now());
   }, []);
 
   const lastPerformedLabel = React.useMemo(() => {
-    if (!mounted) return "—";
     if (!selected?.lastPerformedAt) return "—";
-    return formatDistanceToNow(new Date(selected.lastPerformedAt), { addSuffix: true });
-  }, [selected, mounted]);
+    if (!now) return "—";
+    return formatDistance(new Date(selected.lastPerformedAt), new Date(now), {
+      addSuffix: true,
+    });
+  }, [selected, now]);
 
   return (
     <div className="space-y-4">
@@ -51,14 +48,16 @@ export default function StartPage() {
         </div>
       </div>
 
-      {mounted && unfinished && (
-  <Card className="rounded-3xl p-4">
+      {unfinished && (
+        <Card className="rounded-3xl p-4">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-zinc-500">Active workout</div>
               <div className="text-lg font-bold">{unfinished.title}</div>
             </div>
-            <Button onClick={() => router.push(`/workout/${unfinished.id}`)}>Resume</Button>
+            <Button onClick={() => router.push(`/workout/${unfinished.id}`)}>
+              Resume
+            </Button>
           </div>
         </Card>
       )}
@@ -72,10 +71,6 @@ export default function StartPage() {
           <Button
             onClick={() => {
               const w = createEmptyWorkout();
-
-              // ✅ Update unfinished immediately so UI stays synced
-              setUnfinished(w);
-
               router.push(`/workout/${w.id}`);
             }}
           >
@@ -106,13 +101,12 @@ export default function StartPage() {
                 >
                   <div className="font-semibold text-zinc-800">{t.title}</div>
 
-                  {/* ✅ Only render relative time after mounted */}
                   <div className="mt-1 text-xs text-zinc-500">
                     Last performed:{" "}
-                    {!mounted
-                      ? "—"
-                      : t.lastPerformedAt
-                      ? formatDistanceToNow(new Date(t.lastPerformedAt), { addSuffix: true })
+                    {t.lastPerformedAt && now
+                      ? formatDistance(new Date(t.lastPerformedAt), new Date(now), {
+                          addSuffix: true,
+                        })
                       : "—"}
                   </div>
                 </button>
@@ -130,10 +124,6 @@ export default function StartPage() {
         onStart={() => {
           if (!selected) return;
           const w = createWorkoutFromTemplate(selected.id);
-
-          // ✅ Update unfinished immediately so UI stays synced
-          setUnfinished(w);
-
           setOpen(false);
           router.push(`/workout/${w.id}`);
         }}
