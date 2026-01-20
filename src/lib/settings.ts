@@ -1,35 +1,36 @@
 export type AppSettings = {
-  soundEnabled: boolean;
-  vibrationEnabled: boolean;
+  soundEnabled?: boolean;
+  vibrationEnabled?: boolean;
 };
 
-const SETTINGS_KEY = "fw_settings_v1";
+const KEY = "fw_settings_v1";
 
-export const DEFAULT_SETTINGS: AppSettings = {
+const DEFAULTS: Required<AppSettings> = {
   soundEnabled: true,
   vibrationEnabled: true,
 };
 
-export function getSettings(): AppSettings {
-  // Important: prevents SSR hydration mismatch
-  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+export function getSettings(): Required<AppSettings> {
+  if (typeof window === "undefined") return DEFAULTS;
 
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return DEFAULT_SETTINGS;
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return DEFAULTS;
+    const parsed = JSON.parse(raw) as AppSettings;
 
-    const parsed = JSON.parse(raw) as Partial<AppSettings>;
-    return { ...DEFAULT_SETTINGS, ...parsed };
+    return {
+      soundEnabled: parsed.soundEnabled ?? true,
+      vibrationEnabled: parsed.vibrationEnabled ?? true,
+    };
   } catch {
-    return DEFAULT_SETTINGS;
+    return DEFAULTS;
   }
 }
 
-export function saveSettings(next: Partial<AppSettings>): AppSettings {
-  if (typeof window === "undefined") return { ...DEFAULT_SETTINGS, ...next };
+export function saveSettings(patch: AppSettings) {
+  if (typeof window === "undefined") return;
 
-  const current = getSettings();
-  const merged: AppSettings = { ...current, ...next };
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(merged));
-  return merged;
+  const prev = getSettings();
+  const next = { ...prev, ...patch };
+  localStorage.setItem(KEY, JSON.stringify(next));
 }

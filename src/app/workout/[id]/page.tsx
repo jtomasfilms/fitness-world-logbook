@@ -353,15 +353,16 @@ export default function WorkoutPage() {
                       }}
                       onStop={() => setActiveRest(null)}
                       onComplete={() => {
-  const s = getSettings();
+ const s = getSettings();
 
-  // ✅ Sound
-  if (s.soundEnabled) playBeep();
+// ✅ Sound (default ON)
+if (s.soundEnabled ?? true) playBeep();
 
-  // ✅ Vibration
-  if (s.vibrationEnabled && typeof navigator !== "undefined" && "vibrate" in navigator) {
-    navigator.vibrate([200, 100, 200]); // buzz-buzz pattern
-  }
+// ✅ Vibration (default ON)
+if ((s.vibrationEnabled ?? true) && typeof navigator !== "undefined" && "vibrate" in navigator) {
+  navigator.vibrate([200, 100, 200]); // buzz-buzz pattern
+}
+
 }}
 
                     />
